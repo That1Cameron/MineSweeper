@@ -11,8 +11,8 @@ int main(){
     
 
     //game variables 
-    const int Collumns = 12; //const for static array rn  (want to make this variable at some point)
-    const int Rows = 12;     //const for static arrya rn  (want to make this variable at some point)
+    const int Collumns = 12;  //const for static array rn  (want to make this variable at some point)
+    const int Rows = 12;      //const for static arrya rn  (want to make this variable at some point)
     int bombCount = 10;
     int grid[Rows][Collumns]; //tracks bombs
     int displayGrid[Rows][Collumns]; //displays tile
@@ -33,7 +33,7 @@ int main(){
         for (int j = 0; j < Collumns; j++) {
             displayGrid[i][j] = 10;
             //place mines...
-
+            //rand()
         }   
     }
 
@@ -44,7 +44,8 @@ int main(){
         int x = pos.x / spriteSize;
         int y = pos.y / spriteSize;
 
-        // check window events 
+
+        // check window events
         sf::Event event;
         while (window.pollEvent(event))
         {
@@ -53,18 +54,25 @@ int main(){
                 window.close();
             }
 
-            //left click (going to chekc tile)
+            //button events
             if (event.type == sf::Event::MouseButtonReleased) {
-                //reveal
 
-            }
+                //left click (going to check tile)
+                if (event.mouseButton.button == sf::Mouse::Left)
+                {
+                    //reveal
+                    displayGrid[x][y] = grid[x][y];
+                }
 
-            //right click (going to flag tile)
-            if (event.type == sf::Event::MouseButtonReleased) {
-                displayGrid[x][y] = 11;
-                std::cout << "Flag: " << x << y << std::endl;
+                //right click (going to flag tile)
+                if (event.mouseButton.button == sf::Mouse::Right)
+                {
+                    displayGrid[x][y] = 11;
+                    std::cout << "Flag: " << x << y << std::endl;
+                }
             }
         }
+
 
         // clear the window
         window.clear(sf::Color::White);
