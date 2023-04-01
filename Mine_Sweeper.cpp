@@ -1,16 +1,15 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
-#include <iomanip>
-
 
 struct bombWieght {
     float weight;
     int* tile;
 };
 
-void genBombs(int row, int col, int bombCount, std::vector<std::vector<int>>& grid);
+void genBombs(int row, int col, int bombCount, std::vector<std::vector<int>>& grid, int x, int y);
 void mergeSort(std::vector <bombWieght>& wieghts, int l, int r);
 void merge(std::vector <bombWieght>& wieghts, int p, int q, int r);
+void reveal(std::vector<std::vector<int>>& grid, std::vector<std::vector<int>>& displayGrid, int sourceX, int sourceY);
 
 
 int main(){
@@ -73,9 +72,10 @@ int main(){
                 if (event.mouseButton.button == sf::Mouse::Left)
                 {
                     //generate bombs on the first click
-                    if (!bombsGen) genBombs(rows, collumns, bombCount, grid); bombsGen = true;
+                    if (!bombsGen) genBombs(rows, collumns, bombCount, grid, x, y); bombsGen = true;
 
-                    //reveal
+                    reveal(grid, displayGrid, x, y);
+
                     displayGrid[x][y] = grid[x][y];
                 }
 
@@ -87,7 +87,6 @@ int main(){
                 }
             }
         }
-
 
 
         // clear the buffer
@@ -108,8 +107,8 @@ int main(){
 }
 
 
-void genBombs(int row, int col, int bombCount, std::vector<std::vector<int>>& grid) {
-    std::vector <bombWieght> wieghtVectr;
+void genBombs(int row, int col, int bombCount, std::vector<std::vector<int>>& grid, int x, int y) {
+    std::vector <bombWieght> weightVector;
     
     // generate wieghts for each tile randomly for random bomb spread
     for (int i = 0; i < row; i++) {
@@ -117,9 +116,11 @@ void genBombs(int row, int col, int bombCount, std::vector<std::vector<int>>& gr
             bombWieght tempObj;
             tempObj.tile = &grid[i][j];
             tempObj.weight = (float)(rand()) / (float)(RAND_MAX);
-            wieghtVectr.push_back(tempObj);
+            weightVector.push_back(tempObj);
         }
     }
+
+    weightVector[x + (y * row)].weight = 0;
     
     /* TEST FOR MERGE SORT REMOVE L8R
     std::cout << std::setprecision(1);
@@ -127,24 +128,56 @@ void genBombs(int row, int col, int bombCount, std::vector<std::vector<int>>& gr
         std::cout << wieghtVectr[i].weight << " ";
     std::cout << std::endl << std::endl;*/
 
-    mergeSort(wieghtVectr, 0, wieghtVectr.size() - 1);
+    mergeSort(weightVector, 0, weightVector.size() - 1);
 
     /* TEST FOR MERGE SORT REMOVE L8R
     for (int i = 0; i < wieghtVectr.size() - 1; i++)
-        std::cout << wieghtVectr[i].weight << " ";
-    std::cout << std::endl;*/
+        std::cout << wieghtVectr[i].weight << " " << std::endl;
+    std::cout ;*/
 
+    // the highest wieghted tiles become bombs
     for (int i = 0; i < bombCount; i++) {
-        *wieghtVectr[i].tile = 9;
+        *weightVector[i].tile = 9;
     }
 
+    int neighborBombs;
     for (int i = 0; i < row; i++) {
         for (int j = 0; j < col; j++) {
+            // skip bombs
+            if (grid[i][j] == 9) continue;
 
+            // for each tile loop through nearby tiles
+            neighborBombs = 0;
+            for (int xoff = -1; xoff < 2; xoff++) {
+                for (int yoff = -1; yoff < 2; yoff++) {
+                    int x = i + xoff;
+                    int y = j + yoff;
+                    if ((x > -1 && x < row) && (y > -1 && y < row) && (grid[x][y] == 9)) neighborBombs++;
+                }
+            }
+            grid[i][j] = neighborBombs;
         }
     }
 }
 
+
+void reveal(std::vector<std::vector<int>>& grid, std::vector<std::vector<int>>& displayGrid, int sourceX, int sourceY ) {
+    int row = grid[0].size();
+    int col = grid.size();
+    std::cout << " about to check" << std::endl;
+    for (int xoff = -1; xoff < 2; xoff++) {
+        for (int yoff = -1; yoff < 2; yoff++) {
+            int x = sourceX + xoff;
+            int y = sourceY + yoff;
+            std::cout << " checking x : y " << x << " : " << y << std::endl;
+            if ((x > -1 && x < row) && (y > -1 && y < col) && (grid[sourceX][sourceY] == 0) && (displayGrid[x][y] == 10)) {
+                displayGrid[x][y] = grid[x][y];
+                reveal(grid, displayGrid, x, y);
+            }
+        }
+    }
+
+}
 
 
 // Divide the array into two subarrays, sort them and merge them
@@ -181,8 +214,7 @@ void merge(std::vector <bombWieght>& wieghts, int firstIndex, int q, int righten
     j = 0;
     k = firstIndex;
 
-    // Until we reach either end of either left or mid, pick larger among
-    // elements left and mid and place them in the correct position at wieghts
+    // Until either end of either left or mid, pick larger left and mid; place in correct position of wieghts
     while (i < n1 && j < n2) {
         if (L[i].weight <= M[j].weight) {
             wieghts[k] = L[i];
@@ -195,8 +227,7 @@ void merge(std::vector <bombWieght>& wieghts, int firstIndex, int q, int righten
         k++;
     }
 
-    // When we run out of wieghts in either the left or right side,
-    // pick up the remaining wieghts and put in total wieghts
+    // When run out of wieghts in left or right side, put remaining wieghts in total wieghts
     while (i < n1) {
         wieghts[k] = L[i];
         i++;
